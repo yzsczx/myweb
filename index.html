@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隐私导航网站</title>
+    <style>
+        /* 基础样式 */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 20px;
+        }
+        .category {
+            background-color: #fff;
+            margin: 10px;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            position: relative;
+        }
+        .category h2 {
+            margin-top: 0;
+        }
+        .category ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .category ul li {
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .category ul li a {
+            text-decoration: none;
+            color: #333;
+        }
+        .category ul li a:hover {
+            color: #007BFF;
+        }
+        .delete-category {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #ff4d4d;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+        .edit-link {
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 2px 8px;
+            margin-left: 10px;
+        }
+
+        /* 添加网站和分类的样式 */
+        .add-section {
+            background-color: #fff;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+        }
+        .add-section h2 {
+            margin-top: 0;
+        }
+        .add-section form {
+            display: flex;
+            flex-direction: column;
+        }
+        .add-section label {
+            margin: 10px 0 5px;
+        }
+        .add-section input, .add-section select {
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .add-section button {
+            padding: 10px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .add-section button:hover {
+            background-color: #0056b3;
+        }
+
+        /* 口令输入遮罩层 */
+        .password-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        .password-box {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .password-box input {
+            padding: 8px;
+            margin: 10px 0;
+            width: 200px;
+        }
+
+        /* 编辑链接弹窗 */
+        .edit-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        .edit-box {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .edit-box input {
+            padding: 8px;
+            margin: 10px 0;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 口令输入界面 -->
+    <div class="password-overlay" id="passwordOverlay">
+        <div class="password-box">
+            <h2>请输入访问口令</h2>
+            <input type="password" id="passwordInput" placeholder="默认口令：123456">
+            <button onclick="checkPassword()">确认</button>
+        </div>
+    </div>
+
+    <!-- 主内容（默认隐藏） -->
+    <div id="mainContent" style="display: none;">
+        <header>
+            <h1>隐私导航网站</h1>
+        </header>
+        <div class="container" id="categoryContainer">
+            <!-- 初始分类由JavaScript动态加载 -->
+        </div>
+        <div class="add-section">
+            <h2>添加新分类</h2>
+            <form id="addCategoryForm">
+                <label for="categoryName">分类名称:</label>
+                <input type="text" id="categoryName" placeholder="例如：工作工具" required>
+                <button type="submit">创建分类</button>
+            </form>
+        </div>
+        <div class="add-section">
+            <h2>添加新网站</h2>
+            <form id="addWebsiteForm">
+                <label for="siteName">网站名称:</label>
+                <input type="text" id="siteName" placeholder="例如：Google" required>
+                <label for="siteUrl">网站URL:</label>
+                <input type="url" id="siteUrl" placeholder="例如：https://www.google.com" required>
+                <label for="category">选择分类:</label>
+                <select id="category" required>
+                    <!-- 分类选项由JavaScript动态加载 -->
+                </select>
+                <button type="submit">添加</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 编辑链接弹窗 -->
+    <div class="edit-overlay" id="editOverlay" style="display: none;">
+        <div class="edit-box">
+            <h2>编辑链接</h2>
+            <input type="text" id="editLinkName" placeholder="链接名称">
+            <input type="url" id="editLinkUrl" placeholder="链接URL">
+            <button onclick="saveEdit()">保存</button>
+            <button onclick="closeEdit()">取消</button>
+        </div>
+    </div>
+
+    <script>
+        // 口令验证逻辑
+        const PASSWORD = '123456'; // 默认口令
+        function checkPassword() {
+            const input = document.getElementById('passwordInput').value;
+            if (input === PASSWORD) {
+                localStorage.setItem('savedPassword', PASSWORD);
+                document.getElementById('passwordOverlay').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                loadData(); // 加载保存的数据
+            } else {
+                alert('口令错误！');
+            }
+        }
+
+        // 如果已保存口令，自动跳过输入
+        if (localStorage.getItem('savedPassword') === PASSWORD) {
+            document.getElementById('passwordOverlay').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            loadData();
+        }
+
+        // 数据存储与加载
+        let categories = [];
+        let currentEditLink = null; // 当前正在编辑的链接
+
+        // 初始化默认数据（如果 localStorage 中没有数据）
+        function initializeData() {
+            if (!localStorage.getItem('categories')) {
+                categories = [
+                    {
+                        id: 'searchEngines',
+                        name: '搜索引擎',
+                        links: [
+                            { name: 'Google', url: 'https://www.google.com' },
+                            { name: 'Bing', url: 'https://www.bing.com' },
+                            { name: '百度', url: 'https://www.baidu.com' }
+                        ]
+                    },
+                    {
+                        id: 'socialMedia',
+                        name: '社交媒体',
+                        links: [
+                            { name: 'Facebook', url: 'https://www.facebook.com' },
+                            { name: 'Twitter', url: 'https://www.twitter.com' },
+                            { name: '微博', url: 'https://www.weibo.com' }
+                        ]
+                    }
+                ];
+                saveData();
+            }
+        }
+
+        // 保存数据到 localStorage
+        function saveData() {
+            localStorage.setItem('categories', JSON.stringify(categories));
+        }
+
+        // 从 localStorage 加载数据
+        function loadData() {
+            const savedData = localStorage.getItem('categories');
+            if (savedData) {
+                categories = JSON.parse(savedData);
+                renderCategories();
+                updateCategoryDropdown();
+            }
+        }
+
+        // 渲染分类
+        function renderCategories() {
+            const container = document.getElementById('categoryContainer');
+            container.innerHTML = '';
+            categories.forEach(cat => {
+                const categoryHTML = `
+                    <div class="category" id="${cat.id}">
+                        <button class="delete-category" onclick="deleteCategory('${cat.id}')">删除</button>
+                        <h2>${cat.name}</h2>
+                        <ul>
+                            ${cat.links.map((link, index) => `
+                                <li>
+                                    <a href="${link.url}" target="_blank">${link.name}</a>
+                                    <button class="edit-link" onclick="openEdit('${cat.id}', ${index})">编辑</button>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', categoryHTML);
+            });
+        }
+
+        // 更新分类下拉菜单
+        function updateCategoryDropdown() {
+            const dropdown = document.getElementById('category');
+            dropdown.innerHTML = categories.map(cat => `
+                <option value="${cat.id}">${cat.name}</option>
+            `).join('');
+        }
+
+        // 添加新分类
+        document.getElementById('addCategoryForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const name = document.getElementById('categoryName').value;
+            const newCategory = {
+                id: 'cat-' + Date.now(),
+                name: name,
+                links: []
+            };
+            categories.push(newCategory);
+            saveData();
+            renderCategories();
+            updateCategoryDropdown();
+            document.getElementById('categoryName').value = '';
+        });
+
+        // 添加新网站
+        document.getElementById('addWebsiteForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const siteName = document.getElementById('siteName').value;
+            const siteUrl = document.getElementById('siteUrl').value;
+            const categoryId = document.getElementById('category').value;
+
+            if (!isValidUrl(siteUrl)) {
+                alert('请输入有效的URL！');
+                return;
+            }
+
+            const category = categories.find(cat => cat.id === categoryId);
+            if (category) {
+                category.links.push({
+                    name: siteName,
+                    url: siteUrl
+                });
+                saveData();
+                renderCategories();
+                document.getElementById('siteName').value = '';
+                document.getElementById('siteUrl').value = '';
+            }
+        });
+
+        // 删除分类
+        function deleteCategory(categoryId) {
+            categories = categories.filter(cat => cat.id !== categoryId);
+            saveData();
+            renderCategories();
+            updateCategoryDropdown();
+        }
+
+        // 打开编辑链接弹窗
+        function openEdit(categoryId, linkIndex) {
+            const category = categories.find(cat => cat.id === categoryId);
+            if (category && category.links[linkIndex]) {
+                currentEditLink = { categoryId, linkIndex };
+                document.getElementById('editLinkName').value = category.links[linkIndex].name;
+                document.getElementById('editLinkUrl').value = category.links[linkIndex].url;
+                document.getElementById('editOverlay').style.display = 'flex';
+            }
+        }
+
+        // 保存编辑
+        function saveEdit() {
+            const name = document.getElementById('editLinkName').value;
+            const url = document.getElementById('editLinkUrl').value;
+            if (currentEditLink && isValidUrl(url)) {
+                const category = categories.find(cat => cat.id === currentEditLink.categoryId);
+                if (category) {
+                    category.links[currentEditLink.linkIndex] = { name, url };
+                    saveData();
+                    renderCategories();
+                    closeEdit();
+                }
+            } else {
+                alert('请输入有效的URL！');
+            }
+        }
+
+        // 关闭编辑弹窗
+        function closeEdit() {
+            document.getElementById('editOverlay').style.display = 'none';
+            currentEditLink = null;
+        }
+
+        // URL验证函数
+        function isValidUrl(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        // 初始化数据
+        initializeData();
+    </script>
+</body>
+</html>
